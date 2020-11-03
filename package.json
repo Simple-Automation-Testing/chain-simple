@@ -1,0 +1,57 @@
+{
+  "name": "chain-simple",
+  "version": "0.0.1",
+  "description": "## Main purpose of this package is to provide integration of the common assertions into class methods without refactoring and updates of the class methods and provide chain between class methods, this package does not affect constructor, getters/setters and does not affect internal logic of the class methods. Package works with async function/Promises, and also with sync common code",
+  "main": "built/index.js",
+  "directories": {
+    "example": "examples",
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "LOG_LEVEL=ERROR mocha ./specs/**/*.spec.ts --require ts-node/register --timeout 30000",
+    "test:verbose": "LOG_LEVEL=VERBOSE mocha ./specs/**/*.spec.ts --require ts-node/register --timeout 30000",
+    "test:watch": "mocha ./specs/**/*.spec.ts --require ts-node/register --timeout 30000 --watch",
+    "lint": "eslint --ext .ts ./",
+    "build": "rm -rf ./built && tsc"
+  },
+  "keywords": [
+    "proxy object",
+    "proxify",
+    "flexible extension",
+    "extension",
+    "proxy method",
+    "chaining",
+    "chain",
+    "chain methods"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Simple-Automation-Testing/simple-chain.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Simple-Automation-Testing/simple-chain/issues"
+  },
+  "homepage": "https://github.com/Simple-Automation-Testing/simple-chain#readme",
+  "devDependencies": {
+    "@types/mocha": "^8.0.1",
+    "@types/node": "^14.0.27",
+    "@typescript-eslint/eslint-plugin": "^3.8.0",
+    "@typescript-eslint/parser": "^3.8.0",
+    "assertior": "^0.0.22",
+    "eslint": "^7.6.0",
+    "eslint-plugin-chai-expect": "^2.2.0",
+    "eslint-plugin-chai-friendly": "^0.6.0",
+    "eslint-plugin-mocha": "^8.0.0",
+    "mocha": "^8.1.1",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.3"
+  },
+  "engines": {
+    "node": ">=12.18.3"
+  },
+  "dependencies": {
+    "sat-utils": "^0.0.3"
+  }
+}
