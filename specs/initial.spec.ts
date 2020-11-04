@@ -1,6 +1,6 @@
 import {expect} from 'assertior';
 import {getController} from './setup';
-import {proxifyIt} from '../lib';
+import {chain} from '../lib';
 
 describe('Initial', function() {
   it('async', async function() {
@@ -12,7 +12,7 @@ describe('Initial', function() {
       return data;
     }
     const Controller = getController();
-    proxifyIt().addChain(assertStatus).baseOnPrototype()(Controller);
+    chain().addChain(assertStatus).baseOnPrototype()(Controller);
     const constroller = new Controller();
     // TEST
     const result = await constroller
@@ -31,7 +31,7 @@ describe('Initial', function() {
       return data;
     }
     const Controller = getController();
-    proxifyIt().addChain(assertStatus).baseOnPrototype()(Controller);
+    chain().addChain(assertStatus).baseOnPrototype()(Controller);
     const constroller = new Controller();
     // TEST
     const result = constroller
@@ -51,7 +51,7 @@ describe('Initial', function() {
       return data;
     }
     const Controller = getController();
-    proxifyIt().addChain(assertStatus).baseOnPrototype()(Controller);
+    chain().addChain(assertStatus).baseOnPrototype()(Controller);
     const constroller = new Controller();
     // TEST
     const result = await constroller
@@ -64,5 +64,20 @@ describe('Initial', function() {
 
     expect(result.body).toDeepEqual({test: true});
     expect(wasCalled).toEqual(3);
+  });
+
+  it.only('void', async function() {
+    let wasCalled = 0;
+    function assertStatus(value, data) {
+      expect(value).toEqual(data.status);
+      wasCalled++;
+      return data;
+    }
+    const Controller = getController();
+    chain().addChain(assertStatus).baseOnPrototype()(Controller);
+    const constroller = new Controller();
+    await (constroller
+      .voidMethod1() as any)
+      .voidMethod2();
   });
 });

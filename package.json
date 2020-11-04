@@ -12,7 +12,8 @@
     "test:verbose": "LOG_LEVEL=VERBOSE mocha ./specs/**/*.spec.ts --require ts-node/register --timeout 30000",
     "test:watch": "mocha ./specs/**/*.spec.ts --require ts-node/register --timeout 30000 --watch",
     "lint": "eslint --ext .ts ./",
-    "build": "rm -rf ./built && tsc"
+    "build": "rm -rf ./built && tsc",
+    "build:prepublish": "rm -rf ./built && tsc --sourceMap false"
   },
   "keywords": [
     "proxy object",
@@ -52,6 +53,6 @@
     "node": ">=12.18.3"
   },
   "dependencies": {
-    "sat-utils": "^0.0.3"
+    "sat-utils": "^0.0.4"
   }
 }

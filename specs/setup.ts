@@ -1,4 +1,4 @@
-import {proxifyIt} from '../lib';
+import {chain} from '../lib';
 import {expect} from 'assertior';
 
 const firstNoop = (arg): any => new Promise((res) => {
@@ -102,9 +102,35 @@ function getController() {
     method2(arg?): IResponseData {
       return secondNoop(arg);
     }
+
     method1(arg?): IResponseData {
       return firstNoop(arg);
     }
+
+    async voidMethod1(arg?) {
+      await secondNoop(arg);
+    }
+
+    async voidMethod2(arg?) {
+      await secondNoop(arg);
+    }
+
+    methodStr() {
+      return 'test';
+    }
+
+    methodNumb() {
+      return 222;
+    }
+
+    methodNull() {
+      return null;
+    }
+
+    methodUndefined() {
+      return undefined;
+    }
+
   }
   return Controller;
 }

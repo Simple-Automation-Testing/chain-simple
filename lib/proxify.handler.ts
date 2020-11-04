@@ -1,6 +1,15 @@
 import {isPromise, isFunction, logger} from 'sat-utils';
 const {LOG_LEVEL = 'VERBOSE'} = process.env;
 
+function canBeProxed(arg) {
+  try {
+    new Proxy(arg, {});
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 logger.setLogLevel(LOG_LEVEL);
 /**
  * @info
@@ -13,7 +22,25 @@ function proxifyHadler(originalCaller, context, chainers: {[k: string]: (...args
    * @info
    * this is required for sync call execution
    */
+
+  const proxedLinker = {
+    setted: false,
+    value: null
+  };
+
+  function setProxedLinker(val) {
+    proxedLinker.setted = true;
+    proxedLinker.value = val;
+  }
+
   let proxifiedResult = originalCaller();
+
+  if (!canBeProxed(proxifiedResult)) {
+
+    setProxedLinker(proxifiedResult);
+    proxifiedResult = {};
+  }
+
 
   let proxed = new Proxy(proxifiedResult, {
 

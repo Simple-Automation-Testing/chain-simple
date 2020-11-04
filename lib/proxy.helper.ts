@@ -21,14 +21,19 @@ type ChainerTypeArrayWithBothTypes = Array<((...args: any[]) => any | void) | {[
 type ChainerType = ChainerTypeFn | ChainerTypeChainerObj | ChainerTypeArrayFns | ChainerTypeArrayChainerObj | ChainerTypeArrayWithBothTypes;
 
 
-interface IProxifyItConfig {
+interface IchainConfig {
   chainResult?: boolean;
 }
-function proxifyIt(config?: IProxifyItConfig) {
-  const shouldBeDecorated = [];
-  const chainers = {};
 
-  const proxifyItIterface = {
+interface IChain {
+  addChain(chainer: ChainerType): IChain;
+}
+function chain(config?: IchainConfig) {
+  const shouldBeDecorated = [];
+  const exclude = [];
+
+  const chainers = {};
+  const chainIterface = {
     addChain(chainer: ChainerType) {
       /**
        * @info in case if some unexpeted argument - Error
@@ -51,7 +56,6 @@ function proxifyIt(config?: IProxifyItConfig) {
                 (() => any|void) | {name: string, chai: () => any}
             `);
           }
-
           if (isFunction(_chainer) && _chainer.name) {
             return Object.assign(chainers, {[(_chainer as ChainerTypeFn).name]: _chainer});
           }
@@ -60,7 +64,7 @@ function proxifyIt(config?: IProxifyItConfig) {
           }
         });
 
-        return proxifyItIterface;
+        return chainIterface;
       } else if (isObject(chainer)) {
         const keys = Object.keys(chainer).forEach((chainerKey) => {
           if (!isFunction(chainer[chainerKey])) {
@@ -71,64 +75,61 @@ function proxifyIt(config?: IProxifyItConfig) {
           }
         });
         Object.assign(chainers, chainer);
-        return proxifyItIterface;
+        return chainIterface;
       } else if (isFunction(chainer)) {
         if (!(chainer as ChainerTypeFn).name) {
           throw new Error(`chainer function should not be anonymous function`);
         }
         Object.assign(chainers, {[(chainer as ChainerTypeFn).name]: chainer});
-        return proxifyItIterface;
+        return chainIterface;
       }
     },
-    baseOnPrototype() {
-      return function(constructorFunction) {
+    wrapProto(constructorFunction) {
 
-        const prot = constructorFunction.prototype;
-        const ownPropsList = Object.getOwnPropertyNames(prot);
-        const protMethods = ownPropsList
-          /**
-           * @info ignore constructor function
-           */
-          .filter((fnName) => fnName !== 'constructor')
-          .filter((fnName) => {
-            const descriptor = Object.getOwnPropertyDescriptor(prot, fnName);
-            /**
-             * @info ignore getters and setters
-             */
-            if (descriptor.set || descriptor.get) {
-              return false;
-            }
-
-            /**
-             * @info only configurable methods can be proxified
-             */
-            if (descriptor.configurable && (typeof descriptor.value).includes('function')) {
-              return true;
-            }
-          });
-        protMethods.forEach((fnName) => {
+      const prot = constructorFunction.prototype;
+      const ownPropsList = Object.getOwnPropertyNames(prot);
+      const protMethods = ownPropsList
+        /**
+         * @info ignore constructor function
+         */
+        .filter((fnName) => fnName !== 'constructor')
+        .filter((fnName) => {
           const descriptor = Object.getOwnPropertyDescriptor(prot, fnName);
           /**
-           * @info original method
+           * @info ignore getters and setters
            */
-          const originalMethod = descriptor.value;
+          if (descriptor.set || descriptor.get) {
+            return false;
+          }
 
-          descriptor.value = function(...args) {
-            /**
-             * @info TBD
-            */
-            const executableMethod = originalMethod.bind(this, ...args);
-            return callable(executableMethod, this, chainers, config);
-          };
-          Object.defineProperty(prot, fnName, descriptor);
+          /**
+           * @info only configurable methods can be proxified
+           */
+          if (descriptor.configurable && (typeof descriptor.value).includes('function')) {
+            return true;
+          }
         });
-      };
+      protMethods.forEach((fnName) => {
+        const descriptor = Object.getOwnPropertyDescriptor(prot, fnName);
+        /**
+         * @info original method
+         */
+        const originalMethod = descriptor.value;
+
+        descriptor.value = function(...args) {
+          /**
+           * @info TBD
+          */
+          const executableMethod = originalMethod.bind(this, ...args);
+          return callable(executableMethod, this, chainers, config);
+        };
+        Object.defineProperty(prot, fnName, descriptor);
+      });
     }
   };
-  return proxifyItIterface;
+  return chainIterface;
 }
 
 export {
-  proxifyIt
+  chain
 };
-
