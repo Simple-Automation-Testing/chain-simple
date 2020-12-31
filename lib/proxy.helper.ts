@@ -27,7 +27,8 @@ interface IchainConfig {
 
 interface IChain {
   addChain(chainer: ChainerType): IChain;
-  wrapProto(fn: new () => any): void
+  wrapProto(fn: new (...args: any[]) => any): void;
+  wrapConstruct<T>(T): T;
 }
 function chain(config?: IchainConfig): IChain {
 
@@ -127,6 +128,18 @@ function chain(config?: IchainConfig): IChain {
           return callable(executableMethod, this, chainers, config);
         };
         Object.defineProperty(prot, fnName, descriptor);
+      });
+    },
+    wrapConstruct(constructorFunction) {
+      return new Proxy(constructorFunction, {
+        construct(target, args) {
+          const item = new target(...args);
+          return new Proxy(item, {
+            get(target, handler) {
+
+            }
+          });
+        }
       });
     }
   };

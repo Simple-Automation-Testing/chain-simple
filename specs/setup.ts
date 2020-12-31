@@ -65,9 +65,43 @@ class Controller {
   method2(arg?): IResponseData {
     return secondNoop(arg);
   }
+
   method1(arg?): IResponseData {
     return firstNoop(arg);
   }
+
+  async voidMethod1(arg?) {
+    await secondNoop(arg);
+  }
+
+  async voidMethod2(arg?) {
+    await secondNoop(arg);
+  }
+
+  methodStr() {
+    return 'test';
+  }
+
+  methodNumb() {
+    return 222;
+  }
+
+  methodNull() {
+    return null;
+  }
+
+  methodUndefined() {
+    return undefined;
+  }
+
+}
+class ControllerExtended extends Controller {
+  constructor() {
+    super();
+  }
+}
+function getExtendedController() {
+  return ControllerExtended;
 }
 
 function getController() {
@@ -137,5 +171,6 @@ function getController() {
 
 
 export {
-  getController
+  getController,
+  getExtendedController
 };
