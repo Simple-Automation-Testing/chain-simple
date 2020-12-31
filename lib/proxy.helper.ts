@@ -27,10 +27,9 @@ interface IchainConfig {
 
 interface IChain {
   addChain(chainer: ChainerType): IChain;
+  wrapProto(fn: new () => any): void
 }
-function chain(config?: IchainConfig) {
-  const shouldBeDecorated = [];
-  const exclude = [];
+function chain(config?: IchainConfig): IChain {
 
   const chainers = {};
   const chainIterface = {
@@ -41,7 +40,10 @@ function chain(config?: IchainConfig) {
       if (!chainer) {
         throw new Error(`
           addChain argument shoulb be
-            () => any | {name: string, chai: () => any} | Array<() => any> | Array<{name: string, chai: () => any}>
+            (...args: any[]) => any |
+            {name: string; chain: (...args) => any} |
+            Array<(...args: any[]) => any> |
+            Array<{name: string; chain: (...args: anyp[]) => any}>
         `);
       }
 
@@ -53,7 +55,8 @@ function chain(config?: IchainConfig) {
           if (!_chainer || (isObject(_chainer) && (!_chainer.name || !(_chainer as ChainerTypeChainerObj).chain))) {
             throw new Error(`
               chainer in array should be
-                (() => any|void) | {name: string, chai: () => any}
+                ((...args) => any) |
+                {name: string; chain: (...) => any}
             `);
           }
           if (isFunction(_chainer) && _chainer.name) {
@@ -70,7 +73,7 @@ function chain(config?: IchainConfig) {
           if (!isFunction(chainer[chainerKey])) {
             throw new Error(`
               chainer obj should be
-                {{[_chainer.name as string]: chai: () => any | void}
+                {{[name as string]: (...args: any[]) => any | void}
             `);
           }
         });

@@ -3,7 +3,7 @@ import {getController} from './setup';
 import {chain} from '../lib';
 
 describe('Initial', function() {
-  it('async', async function() {
+  it ('async', async function() {
     // SET UP
     let wasCalled = 0;
     function assertStatus(value, data) {
@@ -12,7 +12,7 @@ describe('Initial', function() {
       return data;
     }
     const Controller = getController();
-    chain().addChain(assertStatus).baseOnPrototype()(Controller);
+    chain().addChain(assertStatus).wrapProto(Controller);
     const constroller = new Controller();
     // TEST
     const result = await constroller
@@ -31,7 +31,7 @@ describe('Initial', function() {
       return data;
     }
     const Controller = getController();
-    chain().addChain(assertStatus).baseOnPrototype()(Controller);
+    chain().addChain(assertStatus).wrapProto(Controller);
     const constroller = new Controller();
     // TEST
     const result = constroller
@@ -51,7 +51,7 @@ describe('Initial', function() {
       return data;
     }
     const Controller = getController();
-    chain().addChain(assertStatus).baseOnPrototype()(Controller);
+    chain().addChain(assertStatus).wrapProto(Controller);
     const constroller = new Controller();
     // TEST
     const result = await constroller
@@ -66,7 +66,7 @@ describe('Initial', function() {
     expect(wasCalled).toEqual(3);
   });
 
-  it.only('void', async function() {
+  it('void', async function() {
     let wasCalled = 0;
     function assertStatus(value, data) {
       expect(value).toEqual(data.status);
@@ -74,7 +74,7 @@ describe('Initial', function() {
       return data;
     }
     const Controller = getController();
-    chain().addChain(assertStatus).baseOnPrototype()(Controller);
+    chain().addChain(assertStatus).wrapProto(Controller);
     const constroller = new Controller();
     await (constroller
       .voidMethod1() as any)
