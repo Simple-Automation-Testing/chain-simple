@@ -74,4 +74,10 @@ describe.only('Wrap constructor ', function() {
     const item = new WrappedMonster(1);
     expect(item.syncTest1().syncTest2()).toDeepEqual({x: 33});
   });
+
+  it('sync and async call', async function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    expect(await item.syncTest1().test1()).toDeepEqual({});
+  });
 });

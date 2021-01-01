@@ -131,16 +131,6 @@ function chain(config?: IchainConfig): IChain {
       });
     },
     wrapConstruct(constructorFunction) {
-      return new Proxy(constructorFunction, {
-        construct(target, args) {
-          const item = new target(...args);
-          return new Proxy(item, {
-            get(target, handler) {
-
-            }
-          });
-        }
-      });
     }
   };
   return chainIterface;
