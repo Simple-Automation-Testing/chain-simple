@@ -1,4 +1,4 @@
-import {wrapConstruct} from '../lib/draft';
+import {wrapConstruct} from '../lib';
 import {expect} from 'assertior';
 
 const firstNoop = (arg?) =>
@@ -26,6 +26,9 @@ class Monster1 {
   constructor(disposition) {
     this.disposition = disposition;
   }
+  get testGetter() {
+    return this.disposition;
+  }
   async test1() {
     return firstNoop();
   }
@@ -47,10 +50,16 @@ class Monster extends Monster1 {
 }
 
 
-describe.only('Wrap constructor ', function() {
+describe('Wrap constructor ', function() {
   it('JSON instance', function() {
     const WrappedMonster = wrapConstruct(Monster);
     expect(JSON.stringify(new WrappedMonster(1))).toEqual(JSON.stringify(new Monster(1)));
+  });
+
+  it('caller to string', function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    expect(item.toString()).toEqual((new Monster(1)).toString());
   });
 
   it('JSON sync caller', function() {
@@ -78,6 +87,48 @@ describe.only('Wrap constructor ', function() {
   it('sync and async call', async function() {
     const WrappedMonster = wrapConstruct(Monster);
     const item = new WrappedMonster(1);
-    expect(await item.syncTest1().test1()).toDeepEqual({});
+    expect(await item.syncTest1().test1()).toDeepEqual({body: {test: false}, status: 404});
+  });
+
+  it('async and sync call', async function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    expect(await item.test1().syncTest1()).toDeepEqual({a: 22});
+  });
+
+  it('async and async call', async function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    expect(await item.test1().test2()).toDeepEqual({body: {test: 'no'}, status: 401});
+  });
+
+  it('async sync async call', async function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    expect(await item.test1().syncTest1().test2()).toDeepEqual({body: {test: 'no'}, status: 401});
+  });
+
+  it('async async sync call', async function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    expect(await item.test1().test2().syncTest1()).toDeepEqual({a: 22});
+  });
+
+  it('async async double sync call', async function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    expect(await item.test1().test2().syncTest1().syncTest2()).toDeepEqual({x: 33});
+  });
+
+  it('not exists', function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    expect(item.not_existing_prop).toEqual(undefined);
+  });
+
+  it('getter', function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    expect(item.testGetter).toEqual(1);
   });
 });

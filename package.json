@@ -1,7 +1,7 @@
 {
   "name": "chain-simple",
-  "version": "0.0.1",
-  "description": "## Main purpose of this package is to provide integration of the common assertions into class methods without refactoring and updates of the class methods and provide chain between class methods, this package does not affect constructor, getters/setters and does not affect internal logic of the class methods. Package works with async function/Promises, and also with sync common code",
+  "version": "0.0.1-beta",
+  "description": "Main purpose of this package is - provide simple way to build chain between any item methods",
   "main": "built/index.js",
   "directories": {
     "example": "examples",
@@ -23,31 +23,32 @@
     "proxy method",
     "chaining",
     "chain",
-    "chain methods"
+    "chain methods",
+    "wrap in chain"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Simple-Automation-Testing/simple-chain.git"
+    "url": "git+https://github.com/Simple-Automation-Testing/chain-simple.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Simple-Automation-Testing/simple-chain/issues"
+    "url": "https://github.com/Simple-Automation-Testing/chain-simple/issues"
   },
-  "homepage": "https://github.com/Simple-Automation-Testing/simple-chain#readme",
+  "homepage": "https://github.com/Simple-Automation-Testing/chain-simple#readme",
   "devDependencies": {
-    "@types/mocha": "^8.0.1",
-    "@types/node": "^14.0.27",
-    "@typescript-eslint/eslint-plugin": "^3.8.0",
-    "@typescript-eslint/parser": "^3.8.0",
-    "assertior": "^0.0.22",
-    "eslint": "^7.6.0",
+    "@types/mocha": "^8.2.0",
+    "@types/node": "^14.14.17",
+    "@typescript-eslint/eslint-plugin": "^4.11.1",
+    "@typescript-eslint/parser": "^4.11.1",
+    "assertior": "0.0.23",
+    "eslint": "^7.16.0",
     "eslint-plugin-chai-expect": "^2.2.0",
     "eslint-plugin-chai-friendly": "^0.6.0",
     "eslint-plugin-mocha": "^8.0.0",
-    "mocha": "^8.1.1",
-    "ts-node": "^9.0.0",
-    "typescript": "^4.0.3"
+    "mocha": "^8.2.1",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.1.3"
   },
   "engines": {
     "node": ">=12.18.3"
