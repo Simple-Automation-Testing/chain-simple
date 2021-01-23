@@ -1,6 +1,6 @@
 {
   "name": "chain-simple",
-  "version": "0.0.1-beta",
+  "version": "0.0.3",
   "description": "Main purpose of this package is - provide simple way to build chain between any item methods",
   "main": "built/index.js",
   "directories": {
@@ -8,7 +8,7 @@
     "lib": "lib"
   },
   "scripts": {
-    "test": "LOG_LEVEL=ERROR mocha ./specs/**/*.spec.ts --require ts-node/register --timeout 30000",
+    "test": "LOG_LEVEL=VERBOSE mocha ./specs/**/*.spec.ts --require ts-node/register --timeout 30000",
     "test:verbose": "LOG_LEVEL=VERBOSE mocha ./specs/**/*.spec.ts --require ts-node/register --timeout 30000",
     "test:watch": "mocha ./specs/**/*.spec.ts --require ts-node/register --timeout 30000 --watch",
     "lint": "eslint --ext .ts ./",

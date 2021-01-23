@@ -23,8 +23,10 @@ const secondNoop = (arg?) =>
 
 class Monster1 {
   disposition;
-  constructor(disposition) {
+  a;
+  constructor(disposition, a = 10) {
     this.disposition = disposition;
+    this.a = a;
   }
   get testGetter() {
     return this.disposition;
@@ -41,6 +43,19 @@ class Monster1 {
   syncTest2() {
     return {x: 33};
   }
+  syncTest3() {
+    return {x: 33, y: 22, z: 44};
+  }
+
+  syncThrow() {
+    throw new Error('!!!!!!!!!!!!!!!!!');
+  }
+
+  asyncThrow() {
+    return new Promise(() => {
+      throw new Error('!!!!!!!!!!!!!!!!!!!!');
+    });
+  }
 }
 
 class Monster extends Monster1 {
@@ -54,6 +69,12 @@ describe('Wrap constructor ', function() {
   it('JSON instance', function() {
     const WrappedMonster = wrapConstruct(Monster);
     expect(JSON.stringify(new WrappedMonster(1))).toEqual(JSON.stringify(new Monster(1)));
+  });
+
+  it('prop getter', function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    expect(item.disposition).toEqual(1);
   });
 
   it('caller to string', function() {
@@ -130,5 +151,41 @@ describe('Wrap constructor ', function() {
     const WrappedMonster = wrapConstruct(Monster);
     const item = new WrappedMonster(1);
     expect(item.testGetter).toEqual(1);
+  });
+
+  it('spread', function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    // {x: 33, y: 22, z: 44}
+    const {z, ...rest} = item.syncTest3();
+    expect(z).toEqual(44);
+    expect(rest).toDeepEqual({x: 33, y: 22});
+  });
+
+  it('throw', function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    try {
+      item.syncThrow();
+    } catch (error) {
+      expect(error).toExist;
+    }
+  });
+
+  it('throw async', async function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    try {
+      await item.asyncThrow();
+    } catch (error) {
+      expect(error).toExist;
+    }
+  });
+
+  it('throw async catch', async function() {
+    const WrappedMonster = wrapConstruct(Monster);
+    const item = new WrappedMonster(1);
+    const e = await item.asyncThrow().catch((e) => e);
+    expect(e).toExist;
   });
 });
