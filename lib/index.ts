@@ -1,34 +1,52 @@
-import {isPromise, isFunction, isAsyncFunction, logger} from 'sat-utils';
+import { isObject, isPromise, isFunction, isAsyncFunction, logger, canBeProxed, isUndefined } from 'sat-utils';
 
 logger.setLogLevel(process.env.LOG_LEVEL);
 
-function wrapObj(item) {
+function wrapObj(item, config?: { getEntity: string }) {
+  if (!canBeProxed(item)) {
+    throw new TypeError('first argument should be an entity that can be proxed');
+  }
+
+  if (!isUndefined(config) && !isObject(config)) {
+    throw new TypeError('second argument should be an object');
+  }
+
   let proxifiedResult = item;
   const proxed = new Proxy(item, {
     get(_t, p) {
+      if (config && config.getEntity === p) {
+        return item;
+      }
+
+      logger.info(p);
       if (p === Symbol.toStringTag) {
-        return proxifiedResult;
+        return proxifiedResult[Symbol.toStringTag];
       }
 
       if (p === 'toString') {
-        return function(...args) {
+        return function (...args) {
           return proxifiedResult.toString(...args);
         };
       }
 
-      logger.info(p);
       if (p === 'toJSON') {
         logger.info('In to JSON');
-        return function() {
+        return function () {
           return proxifiedResult;
         };
       }
-      if (!isFunction(item[p]) && !isAsyncFunction(item[p]) && !isPromise(proxifiedResult) && item[p] && !proxifiedResult[p]) {
+      if (
+        !isFunction(item[p]) &&
+        !isAsyncFunction(item[p]) &&
+        !isPromise(proxifiedResult) &&
+        item[p] &&
+        !proxifiedResult[p]
+      ) {
         logger.info('In to not function, not async function, resulter is not a promise and target has prop');
         return item[p];
       } else if ((isFunction(item[p]) || isAsyncFunction(item[p])) && isPromise(proxifiedResult)) {
         logger.info('In to function or async function and resulter is a promise');
-        return function(...arguments_) {
+        return function (...arguments_) {
           async function handler() {
             await proxifiedResult;
             return item[p](...arguments_);
@@ -38,7 +56,7 @@ function wrapObj(item) {
         };
       } else if (isAsyncFunction(item[p]) && !isPromise(proxifiedResult)) {
         logger.info('In to async function and resulter is a promise');
-        return function(...arguments_) {
+        return function (...arguments_) {
           async function handler() {
             return item[p](...arguments_);
           }
@@ -47,7 +65,7 @@ function wrapObj(item) {
         };
       } else if (isFunction(item[p]) && !isPromise(proxifiedResult)) {
         logger.info('In to function and resulter is not a promise');
-        return function(...arguments_) {
+        return function (...arguments_) {
           proxifiedResult = item[p](...arguments_);
           return proxed;
         };
@@ -58,11 +76,10 @@ function wrapObj(item) {
         if (!isPromise(proxifiedResult)) {
           return proxifiedResult;
         }
-        return async function(onRes, onRej) {
+        return async function (onRes, onRej) {
           const catcher = p === 'catch' ? onRes : onRej;
 
-          proxifiedResult = await proxifiedResult
-            .catch((error) => ({error, ____proxed____error: true}));
+          proxifiedResult = await proxifiedResult.catch(error => ({ error, ____proxed____error: true }));
 
           if (proxifiedResult && proxifiedResult.____proxed____error) {
             return catcher(proxifiedResult.error);
@@ -75,7 +92,7 @@ function wrapObj(item) {
         logger.info('In resulter has prop');
         return proxifiedResult[p];
       }
-      if (!(p in item) && (p in proxifiedResult)) {
+      if (!(p in item) && p in proxifiedResult) {
         logger.info('In target does not have prop but resulter has prop');
         return proxifiedResult[p];
       }
@@ -90,7 +107,7 @@ function wrapObj(item) {
     },
     getOwnPropertyDescriptor(_t, p) {
       return Object.getOwnPropertyDescriptor(proxifiedResult, p);
-    }
+    },
   });
   return proxed;
 }
@@ -106,7 +123,4 @@ function wrapConstruct(constructorFunction) {
   return new Proxy(constructorFunction, handlerConstructor);
 }
 
-export {
-  wrapConstruct,
-  wrapObj
-};
+export { wrapConstruct, wrapObj };
