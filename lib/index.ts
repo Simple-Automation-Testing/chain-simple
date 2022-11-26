@@ -1,8 +1,49 @@
-import { isObject, isPromise, isFunction, isAsyncFunction, logger, canBeProxed, isUndefined } from 'sat-utils';
+import { isObject, isPromise, isFunction, isAsyncFunction, canBeProxed, isUndefined } from 'sat-utils';
 
-logger.setLogLevel(process.env.LOG_LEVEL);
+import { logger } from './logger';
 
-function wrapObj(item, config?: { getEntity: string }) {
+logger.setLogLevel(process.env.CHAIN_SIMPLE_LOG_LEVEL);
+
+type TFn = (...args: any) => any;
+
+type TReplaceReturnType<T extends TFn, TNewReturnType> = (...args: Parameters<T>) => TNewReturnType;
+
+export type TChainable<T extends Record<string, TFn>> = {
+  [K in keyof T]: TReplaceReturnType<T[K], ReturnType<T[K]> & TChainable<T>>;
+};
+
+/**
+ * @example
+ * const {makePropertiesChainable} = require('chain-simple');
+ * const obj = {
+ *   async method1() {
+ *    return Promise.resolve(1).then(value => {
+ *      console.log('method1', value);
+ *      return value;
+ *    });
+ *   },
+ *   async method2() {
+ *     return Promise.resolve(2).then(value => {
+ *       console.log('method2', value);
+ *       return value;
+ *     });
+ *   },
+ *   async method3() {
+ *     return Promise.resolve(3).then(value => {
+ *       console.log('method3', value);
+ *       return value;
+ *     });
+ *   },
+ * };
+ * const chainableObj = makePropertiesChainable(obj);
+ * obj.method1().method3().then((val) => console.log(val))
+ *
+ *
+ * @param {!object} item
+ * @param {{getEntity: string}} [config] config to describe how to get original not project object
+ * @returns {object} object with chainable properties
+ */
+function makePropertiesChainable(item, config?: { getEntity: string }) {
   if (!canBeProxed(item)) {
     throw new TypeError('first argument should be an entity that can be proxed');
   }
@@ -79,10 +120,17 @@ function wrapObj(item, config?: { getEntity: string }) {
         return async function (onRes, onRej) {
           const catcher = p === 'catch' ? onRes : onRej;
 
-          proxifiedResult = await proxifiedResult.catch(error => ({ error, ____proxed____error: true }));
+          proxifiedResult = await proxifiedResult.catch(error => {
+            return { error, ____proxed____error: true };
+          });
+
+          if (proxifiedResult && proxifiedResult.____proxed____error && isFunction(catcher)) {
+            return catcher(proxifiedResult.error);
+          }
 
           if (proxifiedResult && proxifiedResult.____proxed____error) {
-            return catcher(proxifiedResult.error);
+            const promised = Promise.reject(proxifiedResult.error);
+            return promised[p].call(promised, onRes, onRej);
           }
 
           const promised = Promise.resolve(proxifiedResult);
@@ -112,15 +160,17 @@ function wrapObj(item, config?: { getEntity: string }) {
   return proxed;
 }
 
-const handlerConstructor = {
-  construct(target, args) {
-    const item = new target(...args);
-    return wrapObj(item);
-  },
-};
-
-function wrapConstruct(constructorFunction) {
-  return new Proxy(constructorFunction, handlerConstructor);
+function handlerConstructor(config) {
+  return {
+    construct(target, args) {
+      const item = new target(...args);
+      return makePropertiesChainable(item, config);
+    },
+  };
 }
 
-export { wrapConstruct, wrapObj };
+function makeConstructorInstancePropertiesChainable(constructorFunction, config?: { getEntity: string }) {
+  return new Proxy(constructorFunction, handlerConstructor(config));
+}
+
+export { makePropertiesChainable, makeConstructorInstancePropertiesChainable };
