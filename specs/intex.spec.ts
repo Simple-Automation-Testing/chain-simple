@@ -181,7 +181,7 @@ describe('Wrap constructor ', function () {
     }
   });
 
-  it.only('throw async catch', async function () {
+  it('throw async catch', async function () {
     const WrappedMonster = makeConstructorInstancePropertiesChainable(Monster);
     const item = new WrappedMonster(1);
     const e = await item.asyncThrow().catch(e => e);

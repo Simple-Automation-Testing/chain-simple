@@ -88,19 +88,25 @@ function makePropertiesChainable(item, config?: { getEntity: string }) {
       } else if ((isFunction(item[p]) || isAsyncFunction(item[p])) && isPromise(proxifiedResult)) {
         logger.info('In to function or async function and resulter is a promise');
         return function (...arguments_) {
-          async function handler() {
+          const handler = async function () {
             await proxifiedResult;
             return item[p](...arguments_);
-          }
+          };
+
+          Object.defineProperty(handler, 'name', { value: p });
+
           proxifiedResult = handler();
           return proxed;
         };
       } else if (isAsyncFunction(item[p]) && !isPromise(proxifiedResult)) {
         logger.info('In to async function and resulter is a promise');
         return function (...arguments_) {
-          async function handler() {
+          const handler = async function () {
             return item[p](...arguments_);
-          }
+          };
+
+          Object.defineProperty(handler, 'name', { value: p });
+
           proxifiedResult = handler();
           return proxed;
         };
