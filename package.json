@@ -1,6 +1,6 @@
 {
   "name": "chain-simple",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Main purpose of this package is - provide simple way to build chain between any item methods",
   "main": "built/index.js",
   "directories": {

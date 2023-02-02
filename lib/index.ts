@@ -45,21 +45,20 @@ export type TChainable<T extends Record<string, TFn>> = {
  */
 function makePropertiesChainable(item, config?: { getEntity: string }) {
   if (!canBeProxed(item)) {
-    throw new TypeError('first argument should be an entity that can be proxed');
+    throw new TypeError('makePropertiesChainable(): first argument should be an entity that can be proxed');
   }
 
   if (!isUndefined(config) && !isObject(config)) {
-    throw new TypeError('second argument should be an object');
+    throw new TypeError('makePropertiesChainable(): second argument should be an object');
   }
 
   let proxifiedResult = item;
   const proxed = new Proxy(item, {
-    get(_t, p) {
+    get(_t, p, r) {
       if (config && config.getEntity === p) {
         return item;
       }
 
-      logger.info(p);
       if (p === Symbol.toStringTag) {
         return proxifiedResult[Symbol.toStringTag];
       }
@@ -71,88 +70,42 @@ function makePropertiesChainable(item, config?: { getEntity: string }) {
       }
 
       if (p === 'toJSON') {
-        logger.info('In to JSON');
         return function () {
           return proxifiedResult;
         };
       }
-      if (
-        !isFunction(item[p]) &&
-        !isAsyncFunction(item[p]) &&
-        !isPromise(proxifiedResult) &&
-        item[p] &&
-        !proxifiedResult[p]
-      ) {
+
+      const isCallable = isFunction(Reflect.get(item, p, r)) || isAsyncFunction(Reflect.get(item, p, r));
+
+      if (!isCallable && !isPromise(proxifiedResult) && item[p] && !proxifiedResult[p]) {
         logger.info('In to not function, not async function, resulter is not a promise and target has prop');
         return item[p];
-      } else if ((isFunction(item[p]) || isAsyncFunction(item[p])) && isPromise(proxifiedResult)) {
-        logger.info('In to function or async function and resulter is a promise');
+      } else if (isCallable) {
         return function (...arguments_) {
-          const handler = async function () {
-            await proxifiedResult;
-            return item[p](...arguments_);
-          };
-
-          Object.defineProperty(handler, 'name', { value: p });
-
-          proxifiedResult = handler();
-          return proxed;
-        };
-      } else if (isAsyncFunction(item[p]) && !isPromise(proxifiedResult)) {
-        logger.info('In to async function and resulter is a promise');
-        return function (...arguments_) {
-          const handler = async function () {
-            return item[p](...arguments_);
-          };
-
-          Object.defineProperty(handler, 'name', { value: p });
-
-          proxifiedResult = handler();
-          return proxed;
-        };
-      } else if (isFunction(item[p]) && !isPromise(proxifiedResult)) {
-        logger.info('In to function and resulter is not a promise');
-        return function (...arguments_) {
-          proxifiedResult = item[p](...arguments_);
+          proxifiedResult = isPromise(proxifiedResult)
+            ? proxifiedResult.then(function () {
+                return item[p].call(item, ...arguments_);
+              })
+            : item[p].call(item, ...arguments_);
           return proxed;
         };
       } else if ((p === 'then' || p === 'catch') && isPromise(proxifiedResult)) {
-        logger.info('In then catch');
-        /** @info logging */
-        logger.info('start call promise: ', p);
         if (!isPromise(proxifiedResult)) {
           return proxifiedResult;
         }
-        return async function (onRes, onRej) {
-          const catcher = p === 'catch' ? onRes : onRej;
 
-          proxifiedResult = await proxifiedResult.catch(error => {
-            return { error, ____proxed____error: true };
-          });
-
-          if (proxifiedResult && proxifiedResult.____proxed____error && isFunction(catcher)) {
-            return catcher(proxifiedResult.error);
-          }
-
-          if (proxifiedResult && proxifiedResult.____proxed____error) {
-            const promised = Promise.reject(proxifiedResult.error);
-            return promised[p].call(promised, onRes, onRej);
-          }
-
-          const promised = Promise.resolve(proxifiedResult);
-          return promised[p].call(promised, onRes, onRej);
+        return function (onRes, onRej) {
+          return proxifiedResult[p].call(proxifiedResult, onRes, onRej);
         };
       } else if (proxifiedResult[p]) {
-        logger.info('In resulter has prop');
         return proxifiedResult[p];
       }
       if (!(p in item) && p in proxifiedResult) {
-        logger.info('In target does not have prop but resulter has prop');
         return proxifiedResult[p];
       }
     },
-    /** @info basics */
 
+    /** @info base */
     getPrototypeOf(_t) {
       return Object.getPrototypeOf(proxifiedResult);
     },
