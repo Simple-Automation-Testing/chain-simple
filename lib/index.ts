@@ -95,7 +95,10 @@ function makePropertiesChainable(item, config?: { getEntity: string }) {
         }
 
         return function (onRes, onRej) {
-          return proxifiedResult[p].call(proxifiedResult, onRes, onRej);
+          const promised = proxifiedResult;
+          proxifiedResult = item;
+
+          return promised[p].call(promised, onRes, onRej);
         };
       } else if (proxifiedResult[p]) {
         return proxifiedResult[p];
