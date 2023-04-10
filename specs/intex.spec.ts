@@ -65,6 +65,14 @@ class Monster extends Monster1 {
 }
 
 describe('Wrap constructor ', function () {
+  it('extend on the fly', async function () {
+    const WrappedMonster = makeConstructorInstancePropertiesChainable(Monster, {
+      extendProxed: () => ({ notExistBefore: () => Promise.resolve(25) }),
+    });
+    const result = await new WrappedMonster(1).test1().notExistBefore();
+    expect(result).toEqual(25);
+  });
+
   it('JSON instance', function () {
     const WrappedMonster = makeConstructorInstancePropertiesChainable(Monster);
     expect(JSON.stringify(new WrappedMonster(1))).toEqual(JSON.stringify(new Monster(1)));

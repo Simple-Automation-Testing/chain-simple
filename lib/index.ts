@@ -43,7 +43,10 @@ export type TChainable<T extends Record<string, TFn>> = {
  * @param {{getEntity: string}} [config] config to describe how to get original not project object
  * @returns {object} object with chainable properties
  */
-function makePropertiesChainable(item, config?: { getEntity: string }) {
+function makePropertiesChainable(
+  item,
+  config?: { getEntity: string; extendProxed: (propName) => { [k: string]: any } },
+) {
   if (!canBeProxed(item)) {
     throw new TypeError('makePropertiesChainable(): first argument should be an entity that can be proxed');
   }
@@ -73,6 +76,20 @@ function makePropertiesChainable(item, config?: { getEntity: string }) {
         return function () {
           return proxifiedResult;
         };
+      }
+      if (
+        p !== 'then' &&
+        p !== 'catch' &&
+        isUndefined(Reflect.get(item, p, r)) &&
+        isObject(config) &&
+        isFunction(config.extendProxed)
+      ) {
+        try {
+          const extension = config.extendProxed(p);
+          Object.assign(item, extension);
+        } catch (error) {
+          console.error(error);
+        }
       }
 
       const isCallable = isFunction(Reflect.get(item, p, r)) || isAsyncFunction(Reflect.get(item, p, r));
@@ -131,7 +148,7 @@ function handlerConstructor(config) {
   };
 }
 
-function makeConstructorInstancePropertiesChainable(constructorFunction, config?: { getEntity: string }) {
+function makeConstructorInstancePropertiesChainable(constructorFunction, config?: { getEntity?: string; extendProxed: (propName) => { [k: string]: any } }) {
   return new Proxy(constructorFunction, handlerConstructor(config));
 }
 
