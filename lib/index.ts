@@ -12,6 +12,8 @@ export type TChainable<T extends Record<string, TFn>> = {
   [K in keyof T]: TReplaceReturnType<T[K], ReturnType<T[K]> & TChainable<T>>;
 };
 
+type TConfig = { getEntity?: string; extendProxed?: (propName) => { [k: string]: any } };
+
 /**
  * @example
  * const {makePropertiesChainable} = require('chain-simple');
@@ -43,10 +45,7 @@ export type TChainable<T extends Record<string, TFn>> = {
  * @param {{getEntity: string}} [config] config to describe how to get original not project object
  * @returns {object} object with chainable properties
  */
-function makePropertiesChainable(
-  item,
-  config?: { getEntity: string; extendProxed: (propName) => { [k: string]: any } },
-) {
+function makePropertiesChainable(item, config?: TConfig) {
   if (!canBeProxed(item)) {
     throw new TypeError('makePropertiesChainable(): first argument should be an entity that can be proxed');
   }
@@ -148,7 +147,7 @@ function handlerConstructor(config) {
   };
 }
 
-function makeConstructorInstancePropertiesChainable(constructorFunction, config?: { getEntity?: string; extendProxed: (propName) => { [k: string]: any } }) {
+function makeConstructorInstancePropertiesChainable(constructorFunction, config?: TConfig) {
   return new Proxy(constructorFunction, handlerConstructor(config));
 }
 
