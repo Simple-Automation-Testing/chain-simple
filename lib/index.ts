@@ -12,7 +12,10 @@ export type TChainable<T extends Record<string, TFn>> = {
   [K in keyof T]: TReplaceReturnType<T[K], ReturnType<T[K]> & TChainable<T>>;
 };
 
-type TConfig = { getEntity?: string; extendProxed?: (propName) => { [k: string]: any } };
+type TConfig = {
+  getEntity?: string;
+  extendProxed?: (propName) => { [k: string]: any } | ((item: any) => { [k: string]: any });
+};
 
 /**
  * @example
@@ -85,7 +88,13 @@ function makePropertiesChainable(item, config?: TConfig) {
       ) {
         try {
           const extension = config.extendProxed(p);
-          Object.assign(item, extension);
+          if (isObject(extension)) {
+            Object.assign(item, extension);
+          } else if (isFunction(extension)) {
+            // @ts-ignore
+            const result = extension(item);
+            Object.assign(item, result);
+          }
         } catch (error) {
           console.error(error);
         }
