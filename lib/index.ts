@@ -1,4 +1,4 @@
-import { isObject, isPromise, isFunction, isAsyncFunction, canBeProxed, isUndefined } from 'sat-utils';
+import { isArray, isObject, isPromise, isFunction, isAsyncFunction, canBeProxed, isUndefined } from 'sat-utils';
 
 import { logger } from './logger';
 
@@ -15,6 +15,7 @@ export type TChainable<T extends Record<string, TFn>> = {
 type TConfig = {
   getEntity?: string;
   extendProxed?: (propName) => { [k: string]: any } | ((item: any) => { [k: string]: any });
+  getEntityPropList?: string[] | { [k: string]: any };
 };
 
 /**
@@ -49,6 +50,19 @@ type TConfig = {
  * @returns {object} object with chainable properties
  */
 function makePropertiesChainable(item, config?: TConfig) {
+  const propsList = [];
+  if (isObject(config) && config.getEntityPropList) {
+    if (!isObject(config.getEntityPropList) && !isArray(config.getEntityPropList)) {
+      throw new TypeError('config "getEntityPropList" should be an array or an object');
+    }
+
+    propsList.push(
+      ...(isObject(config.getEntityPropList)
+        ? Object.keys(config.getEntityPropList)
+        : (config.getEntityPropList as string[])),
+    );
+  }
+
   if (!canBeProxed(item)) {
     throw new TypeError('makePropertiesChainable(): first argument should be an entity that can be proxed');
   }
@@ -60,7 +74,15 @@ function makePropertiesChainable(item, config?: TConfig) {
   let proxifiedResult = item;
   const proxed = new Proxy(item, {
     get(_t, p, r) {
-      if (config && config.getEntity === p) {
+      if (propsList.length && propsList.includes(p)) {
+        const propValue = Reflect.getOwnPropertyDescriptor(item, p)?.value;
+        if (isFunction(propValue) || isAsyncFunction(propValue)) {
+          return item[p].bind(item);
+        }
+        return item[p];
+      }
+
+      if (isObject(config) && config.getEntity === p) {
         return item;
       }
 
@@ -79,6 +101,7 @@ function makePropertiesChainable(item, config?: TConfig) {
           return proxifiedResult;
         };
       }
+
       if (
         p !== 'then' &&
         p !== 'catch' &&
