@@ -50,7 +50,9 @@ type TConfig = {
  * @returns {object} object with chainable properties
  */
 function makePropertiesChainable(item, config?: TConfig) {
+  const promiseCallableProps: any[] = ['then', 'catch', 'finally'];
   const propsList = [];
+
   if (isObject(config) && config.getEntityPropList) {
     if (!isObject(config.getEntityPropList) && !isArray(config.getEntityPropList)) {
       throw new TypeError('config "getEntityPropList" should be an array or an object');
@@ -103,8 +105,7 @@ function makePropertiesChainable(item, config?: TConfig) {
       }
 
       if (
-        p !== 'then' &&
-        p !== 'catch' &&
+        !promiseCallableProps.includes(p) &&
         isUndefined(Reflect.get(item, p, r)) &&
         isObject(config) &&
         isFunction(config.extendProxed)
@@ -126,18 +127,36 @@ function makePropertiesChainable(item, config?: TConfig) {
       const isCallable = isFunction(Reflect.get(item, p, r)) || isAsyncFunction(Reflect.get(item, p, r));
 
       if (!isCallable && !isPromise(proxifiedResult) && item[p] && !proxifiedResult[p]) {
-        logger.info('In to not function, not async function, resulter is not a promise and target has prop');
+        logger.chainer(`[CHAIN_SIMPLE]: ${String(p)} is not a callable.`);
+
         return item[p];
       } else if (isCallable) {
+        logger.chainer(`[CHAIN_SIMPLE]: ${String(p)} is a callable.`);
+
         return function (...arguments_) {
-          proxifiedResult = isPromise(proxifiedResult)
-            ? proxifiedResult.then(function () {
+          logger.chainer(`[CHAIN_SIMPLE]: ${String(p)} is called with args: `, ...arguments);
+
+          if (isPromise(proxifiedResult)) {
+            logger.chainer(`[CHAIN_SIMPLE]: previous call result is a promise`);
+            proxifiedResult = proxifiedResult
+              .then(function (r) {
+                logger.chainer(`[CHAIN_SIMPLE]: previous call result is: `, r);
+
                 return item[p].call(item, ...arguments_);
               })
-            : item[p].call(item, ...arguments_);
+              .catch(e => console.log(e));
+          } else {
+            logger.chainer(`[CHAIN_SIMPLE]: previous call result is not a promise`);
+            logger.chainer(`[CHAIN_SIMPLE]: previous call result is: `, proxifiedResult);
+
+            proxifiedResult = item[p].call(item, ...arguments_);
+          }
+
           return proxed;
         };
-      } else if ((p === 'then' || p === 'catch') && isPromise(proxifiedResult)) {
+      } else if (promiseCallableProps.includes(p) && isPromise(proxifiedResult)) {
+        logger.chainer(`[CHAIN_SIMPLE]: previous call result is a promise and next call is a promise method call`);
+
         if (!isPromise(proxifiedResult)) {
           return proxifiedResult;
         }
