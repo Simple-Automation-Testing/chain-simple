@@ -138,13 +138,11 @@ function makePropertiesChainable(item, config?: TConfig) {
 
           if (isPromise(proxifiedResult)) {
             logger.chainer(`[CHAIN_SIMPLE]: previous call result is a promise`);
-            proxifiedResult = proxifiedResult
-              .then(function (r) {
-                logger.chainer(`[CHAIN_SIMPLE]: previous call result is: `, r);
+            proxifiedResult = proxifiedResult.then(function (r) {
+              logger.chainer(`[CHAIN_SIMPLE]: previous call result is: `, r);
 
-                return item[p].call(item, ...arguments_);
-              })
-              .catch(e => console.log(e));
+              return item[p].call(item, ...arguments_);
+            });
           } else {
             logger.chainer(`[CHAIN_SIMPLE]: previous call result is not a promise`);
             logger.chainer(`[CHAIN_SIMPLE]: previous call result is: `, proxifiedResult);
