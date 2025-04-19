@@ -14,13 +14,32 @@ export type TChainable<T extends Record<string, TFn>> = {
 
 type TConfig = {
   getEntity?: string;
+  extendOnly?: boolean;
   extendProxed?: (propName) => { [k: string]: any } | ((item: any) => { [k: string]: any });
   getEntityPropList?: string[] | { [k: string]: any };
 };
 
+function extendProxed(target, propName: string | symbol, receiver: any, config: TConfig) {
+  if (isObject(config) && isFunction(config.extendProxed) && isUndefined(Reflect.get(target, propName, receiver))) {
+    try {
+      const extension = config.extendProxed(propName);
+      if (isObject(extension)) {
+        Object.assign(target, extension);
+      } else if (isFunction(extension)) {
+        const result = (extension as TConfig['extendProxed'])(target);
+        Object.assign(target, result);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
+    return target;
+  }
+}
+
 /**
  * @example
- * const {makePropertiesChainable} = require('chain-simple');
+ * const {chainProps} = require('chain-simple');
  * const obj = {
  *   async method1() {
  *    return Promise.resolve(1).then(value => {
@@ -41,7 +60,7 @@ type TConfig = {
  *     });
  *   },
  * };
- * const chainableObj = makePropertiesChainable(obj);
+ * const chainableObj = chainProps(obj);
  * obj.method1().method3().then((val) => console.log(val))
  *
  *
@@ -49,7 +68,7 @@ type TConfig = {
  * @param {{getEntity: string}} [config] config to describe how to get original not project object
  * @returns {object} object with chainable properties
  */
-function makePropertiesChainable(item, config?: TConfig) {
+function chainProps(item, config?: TConfig) {
   const promiseCallableProps: any[] = ['then', 'catch', 'finally'];
   const propsList = [];
 
@@ -66,12 +85,13 @@ function makePropertiesChainable(item, config?: TConfig) {
   }
 
   if (!canBeProxed(item)) {
-    throw new TypeError('makePropertiesChainable(): first argument should be an entity that can be proxed');
+    throw new TypeError('chainProps(): first argument should be an entity that can be proxed');
   }
 
   if (!isUndefined(config) && !isObject(config)) {
-    throw new TypeError('makePropertiesChainable(): second argument should be an object');
+    throw new TypeError('chainProps(): second argument should be an object');
   }
+  const _config = { ...config };
 
   let proxifiedResult = item;
   const proxed = new Proxy(item, {
@@ -84,7 +104,13 @@ function makePropertiesChainable(item, config?: TConfig) {
         return item[p];
       }
 
-      if (isObject(config) && config.getEntity === p) {
+      if (_config.extendOnly) {
+        extendProxed(item, p, r, config);
+
+        return item[p];
+      }
+
+      if (_config.getEntity === p) {
         return item;
       }
 
@@ -104,24 +130,8 @@ function makePropertiesChainable(item, config?: TConfig) {
         };
       }
 
-      if (
-        !promiseCallableProps.includes(p) &&
-        isUndefined(Reflect.get(item, p, r)) &&
-        isObject(config) &&
-        isFunction(config.extendProxed)
-      ) {
-        try {
-          const extension = config.extendProxed(p);
-          if (isObject(extension)) {
-            Object.assign(item, extension);
-          } else if (isFunction(extension)) {
-            // @ts-ignore
-            const result = extension(item);
-            Object.assign(item, result);
-          }
-        } catch (error) {
-          console.error(error);
-        }
+      if (!promiseCallableProps.includes(p)) {
+        extendProxed(item, p, r, config);
       }
 
       const isCallable = isFunction(Reflect.get(item, p, r)) || isAsyncFunction(Reflect.get(item, p, r));
@@ -191,7 +201,7 @@ function handlerConstructor(config) {
   return {
     construct(target, args) {
       const item = new target(...args);
-      return makePropertiesChainable(item, config);
+      return chainProps(item, config);
     },
   };
 }
@@ -200,4 +210,4 @@ function makeConstructorInstancePropertiesChainable(constructorFunction, config?
   return new Proxy(constructorFunction, handlerConstructor(config));
 }
 
-export { makePropertiesChainable, makeConstructorInstancePropertiesChainable };
+export { chainProps, makeConstructorInstancePropertiesChainable };

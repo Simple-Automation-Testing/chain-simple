@@ -5,7 +5,7 @@
 The purpose of this library is - build simple and flexible chainable call of the object` methods
 
 ```ts
-import { makePropertiesChainable } from 'chain-simple';
+import { chainProps } from 'chain-simple';
 import type { TChainable } from 'chain-simple';
 
 const obj = {
@@ -29,7 +29,7 @@ const obj = {
   },
 };
 
-const chainableObj: TChainable<typeof obj> = makePropertiesChainable(obj);
+const chainableObj: TChainable<typeof obj> = chainProps(obj);
 
 chainableObj
   .method1()
@@ -38,7 +38,7 @@ chainableObj
 ```
 
 ```js
-const { makePropertiesChainable } = require('chain-simple');
+const { chainProps } = require('chain-simple');
 
 const obj = {
   async method1() {
@@ -61,7 +61,7 @@ const obj = {
   },
 };
 
-const chainableObj: TChainable<typeof obj> = makePropertiesChainable(obj);
+const chainableObj: TChainable<typeof obj> = chainProps(obj);
 
 chainableObj
   .method1()
